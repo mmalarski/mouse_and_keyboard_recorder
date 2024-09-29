@@ -8,17 +8,7 @@ import keyboard
 import csv
 
 from circle_overlay import CircleOverlay
-
-date_time = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
-mouse_click_file = open(f"{date_time}_mouse_click_data.csv", "a")
-recording_filename = f"{date_time}_recording.avi"
-codec = cv2.VideoWriter_fourcc(*"XVID")
-fps = 30.0
-frame_counter = 0
-resolution = (1920, 1080)
-video_writer = cv2.VideoWriter(recording_filename, codec, fps, resolution)
-
-start_time_in_seconds = time.time()
+import functions as f
 
 
 def save_mouse_click_data_to_file():
@@ -31,11 +21,16 @@ def save_mouse_click_data_to_file():
     csv_writer.writerow([elapsed_time_in_seconds, x, y, frame_counter])
 
 
+mouse.on_click(save_mouse_click_data_to_file)
+
+date_time, mouse_click_file, recording_filename = f.create_directory_and_get_filenames()
+video_writer = f.create_videowriter_with_output_filename_and_fps(recording_filename, 30)
+
 cv2.namedWindow("Live", cv2.WINDOW_NORMAL)
 cv2.resizeWindow("Live", 480, 270)
 
-mouse.on_click(save_mouse_click_data_to_file)
-
+frame_counter = 0
+start_time_in_seconds = time.time()
 previous_frame_timestamp = time.time()
 cumulative_elapsed_time = 0
 while True:
@@ -72,17 +67,16 @@ cv2.destroyAllWindows()
 
 clicks_to_stamp = []
 
-with open(f"{date_time}_mouse_click_data.csv", "r") as mouse_click_file:
+with open(f"{date_time}\\{date_time}_mouse_click_data.csv", "r") as mouse_click_file:
     csv_reader = csv.reader(mouse_click_file, delimiter=",")
     for row in csv_reader:
         circle = CircleOverlay(row[0], row[1], row[2], row[3])
         clicks_to_stamp.append(circle)
 
 video_capture = cv2.VideoCapture(recording_filename)
-video_writer = cv2.VideoWriter(
-    f"{date_time}_final_recording.avi", codec, measured_fps, resolution
+video_writer = f.create_videowriter_with_output_filename_and_fps(
+    f"{date_time}\\{date_time}_final_recording.avi", measured_fps
 )
-
 circles_currently_drawn = []
 circles = []
 
