@@ -108,10 +108,20 @@ while video_capture.isOpened():
         cv2.putText(
             overlay,
             circle.__str__(),
-            (circle.x, circle.y - 10),
+            (circle.x, circle.y),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.5,
-            (0, 0, 255),
+            (255, 255, 255),
+            3,
+            cv2.LINE_AA,
+        )
+        cv2.putText(
+            overlay,
+            circle.__str__(),
+            (circle.x, circle.y),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 0, 0),
             1,
             cv2.LINE_AA,
         )
@@ -121,5 +131,7 @@ while video_capture.isOpened():
 
 video_capture.release()
 video_writer.release()
+if os.path.exists(recording_filename):
+    os.remove(recording_filename)
 
 print("Recording saved as", f"{date_time}_final_recording.avi")
