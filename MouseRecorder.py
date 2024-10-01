@@ -9,6 +9,7 @@ import csv
 
 from CircleOverlay import CircleOverlay
 from Timer import Timer
+from ProgressBar import ProgressBar
 
 BACKSPACE_KEY = 8
 CIRCLE_RADIUS = 20
@@ -20,6 +21,7 @@ FPS = 30
 class MouseRecorder:
     def __init__(self):
         self.timer = Timer()
+        self.progress_bar = None
         self.video_writer = None
         self.clicks_to_stamp = []
         self.circles_currently_drawn = []
@@ -61,9 +63,7 @@ class MouseRecorder:
 
             screenshot = pyautogui.screenshot()
             frame = np.array(screenshot)
-            frame = cv2.cvtColor(
-                frame, cv2.COLOR_BGR2RGB
-            )  # convert color from BGR to RGB
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
             self.video_writer.write(frame)
             cv2.imshow("Live", frame)
@@ -90,25 +90,29 @@ class MouseRecorder:
         self.read_mouse_clicks_from_file()
 
         raw_video_capture = cv2.VideoCapture(self.filename_recording)
+        raw_video_total_frames = raw_video_capture.get(cv2.CAP_PROP_FRAME_COUNT)
+        self.progress_bar = ProgressBar(raw_video_total_frames)
         self.enable_videowriter_with_output_filename_and_fps(
             self.filename_final_recording, self.timer.get_mean_fps()
         )
 
-        while raw_video_capture.isOpened():
-            ret, frame = raw_video_capture.read()
-            if not ret:
-                print("Can't receive frame (stream end?). Exiting ...")
-                break
+        try:
+            while raw_video_capture.isOpened():
+                self.progress_bar.update()
+                is_next_frame, frame = raw_video_capture.read()
+                if not is_next_frame:
+                    break
 
-            current_frame = raw_video_capture.get(cv2.CAP_PROP_POS_FRAMES)
-            if self.should_draw_circle_this_frame(current_frame):
-                self.move_circle_to_drawn_list()
+                current_frame = raw_video_capture.get(cv2.CAP_PROP_POS_FRAMES)
+                if self.should_draw_circle_this_frame(current_frame):
+                    self.move_circle_to_drawn_list()
 
-            self.draw_circles_on_frame(frame)
-            self.video_writer.write(frame)
-
-        raw_video_capture.release()
-        self.video_writer.release()
+                self.draw_circles_on_frame(frame)
+                self.video_writer.write(frame)
+        finally:
+            raw_video_capture.release()
+            self.video_writer.release()
+            self.progress_bar.close()
 
     def read_mouse_clicks_from_file(self):
         with open(self.filename_mouse_click, "r") as mouse_click_file:
