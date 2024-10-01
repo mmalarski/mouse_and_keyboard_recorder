@@ -20,11 +20,11 @@ FPS = 30
 
 class MouseRecorder:
     def __init__(self):
-        self.timer = Timer()
-        self.progress_bar = None
+        self.timer: Timer = Timer()
+        self.progress_bar: ProgressBar = None
         self.video_writer = None
         self.clicks_to_stamp = []
-        self.circles_currently_drawn = []
+        self.circles_currently_drawn: CircleOverlay = []
 
         date_time = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
         os.makedirs(f"{date_time}", exist_ok=True)
@@ -117,8 +117,8 @@ class MouseRecorder:
     def read_mouse_clicks_from_file(self):
         with open(self.filename_mouse_click, "r") as mouse_click_file:
             csv_reader = csv.reader(mouse_click_file, delimiter=",")
-            for row in csv_reader:
-                circle = CircleOverlay(row[0], row[1], row[2], row[3])
+            for index, row in enumerate(csv_reader, start=1):
+                circle = CircleOverlay(row[0], row[1], row[2], row[3], index)
                 self.clicks_to_stamp.append(circle)
 
     def should_draw_circle_this_frame(self, current_frame):
@@ -128,13 +128,7 @@ class MouseRecorder:
             return self.clicks_to_stamp[0].frame_index == current_frame
 
     def move_circle_to_drawn_list(self):
-        circle_drawn = CircleOverlay(
-            self.clicks_to_stamp[0].elapsed_time,
-            self.clicks_to_stamp[0].x,
-            self.clicks_to_stamp[0].y,
-            self.clicks_to_stamp[0].frame_index,
-        )
-        self.circles_currently_drawn.append(circle_drawn)
+        self.circles_currently_drawn.append(self.clicks_to_stamp[0])
         self.check_and_remove_drawn_circles()
         self.clicks_to_stamp.pop(0)
 
