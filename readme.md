@@ -18,7 +18,7 @@ Mouse Recorder is a tool designed to record and replay mouse clicks. This was de
 ## Installation
 1. Clone the repository:
   ```sh
-  git clone https://github.com/yourusername/mouse_and_keyboard_recorder.git
+  git clone https://github.com/mmalarski/mouse_and_keyboard_recorder
   ```
 2. Navigate to the project directory:
   ```sh
