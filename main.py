@@ -1,7 +1,5 @@
-from MouseRecorder import MouseRecorder
+import Application
 
 if __name__ == "__main__":
-    recorder = MouseRecorder()
-    recorder.setup()
-    recorder.record()
-    recorder.cleanup()
+    app = Application.Application()
+    app.run()
