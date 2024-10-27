@@ -1,11 +1,11 @@
 import os
-import time
 import pyautogui
 import cv2
 import numpy as np
 import mouse
-import keyboard
 import csv
+import threading
+import datetime
 
 from CircleOverlay import CircleOverlay
 from Timer import Timer
@@ -25,13 +25,57 @@ class MouseRecorder:
         self.clicks_to_stamp = []
         self.circles_currently_drawn: CircleOverlay = []
 
-        date_time = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
-        os.makedirs(f"{date_time}", exist_ok=True)
-        self.filename_mouse_click = f"{date_time}\\mouse_click_data.csv"
-        self.filename_recording = f"{date_time}\\recording.avi"
-        self.filename_final_recording = f"{date_time}\\final_recording.avi"
+        self.directory = None
+        self.filename_mouse_click = None
+        self.filename_recording = None
+        self.filename_final_recording = None
+
+        self.file_mouse = None
+
+        self.stop_thread_event = threading.Event()
+
+    def record(self):
+        self.timer.start()
+        while not self.stop_thread_event.is_set():
+            self.timer.increment_frame_counter()
+
+            screenshot = pyautogui.screenshot()
+            frame = np.array(screenshot)
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+            self.video_writer.write(frame)
+
+        print(f"Recording duration: {self.timer.get_total_time()}s")
+
+    def reset(self):
+        self.clicks_to_stamp = []
+        self.circles_currently_drawn = []
+        self.video_writer = None
+
+    def finalize(self):
+        self.file_mouse.close()
+        self.video_writer.release()
+        self.video_writer = None
+        mouse.unhook_all()
+        cv2.destroyAllWindows()
+        self.stamp_circles_on_raw_recording()
+        if os.path.exists(self.filename_recording):
+            os.remove(self.filename_recording)
+        print(f"Recording {self.filename_final_recording} saved!")
+
+    def set_paths(self, directory):
+        self.directory = directory
+        now = datetime.datetime.now().strftime("%H-%M-%S")
+        self.filename_mouse_click = f"{self.directory}\\mouse_click_data_{now}.csv"
+        self.filename_recording = f"{self.directory}\\recording_{now}.avi"
+        self.filename_final_recording = f"{self.directory}\\final_recording_{now}.avi"
 
         self.file_mouse = open(self.filename_mouse_click, "w")
+        mouse.on_click(self.save_mouse_click_data_to_file, args=("left",))
+        mouse.on_right_click(self.save_mouse_click_data_to_file, args=("right",))
+        self.enable_videowriter_with_output_filename_and_fps(
+            self.filename_recording, FPS
+        )
 
     def save_mouse_click_data_to_file(self, button):
         x, y = mouse.get_position()
@@ -59,49 +103,9 @@ class MouseRecorder:
                 self.clicks_to_stamp.append(circle)
 
     def enable_videowriter_with_output_filename_and_fps(self, filename, fps):
-        codec = cv2.VideoWriter_fourcc(*"XVID")
+        codec = cv2.VideoWriter_fourcc(*"mp4v")
         resolution = (1920, 1080)
         self.video_writer = cv2.VideoWriter(filename, codec, fps, resolution)
-
-    def setup(self):
-        mouse.on_click(self.save_mouse_click_data_to_file, args=("left",))
-        mouse.on_right_click(self.save_mouse_click_data_to_file, args=("right",))
-        self.enable_videowriter_with_output_filename_and_fps(
-            self.filename_recording, FPS
-        )
-
-        cv2.namedWindow("Live", cv2.WINDOW_NORMAL)
-        cv2.resizeWindow("Live", 480, 270)
-
-    def record(self):
-        self.timer.start()
-        while True:
-            self.timer.count_frame()
-
-            screenshot = pyautogui.screenshot()
-            frame = np.array(screenshot)
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-            self.video_writer.write(frame)
-            cv2.imshow("Live", frame)
-
-            if (
-                cv2.waitKey(1) == BACKSPACE_KEY
-                or cv2.getWindowProperty("Live", cv2.WND_PROP_VISIBLE) < 1
-                or keyboard.is_pressed("backspace")
-            ):
-                break
-        print(f"Recording duration: {self.timer.get_total_time()}s")
-
-    def cleanup(self):
-        self.file_mouse.close()
-        self.video_writer.release()
-        mouse.unhook_all()
-        cv2.destroyAllWindows()
-        self.stamp_circles_on_raw_recording()
-        if os.path.exists(self.filename_recording):
-            os.remove(self.filename_recording)
-        print("Done!")
 
     def stamp_circles_on_raw_recording(self):
         self.read_mouse_clicks_from_file()

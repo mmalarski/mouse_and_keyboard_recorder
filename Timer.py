@@ -13,7 +13,7 @@ class Timer:
     def get_time_since_last_frame(self):
         return time.time() - self.last_frame_timestamp
 
-    def count_frame(self):
+    def increment_frame_counter(self):
         self.frame_counter += 1
         self.last_frame_timestamp = time.time()
 
