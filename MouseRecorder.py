@@ -13,9 +13,8 @@ from ProgressBar import ProgressBar
 
 BACKSPACE_KEY = 8
 CIRCLE_RADIUS = 20
-CIRCLE_COLOR = (0, 0, 255)
 ALPHA = 0.4
-FPS = 30
+FPS = 10
 
 
 class MouseRecorder:
@@ -34,13 +33,30 @@ class MouseRecorder:
 
         self.file_mouse = open(self.filename_mouse_click, "w")
 
-    def save_mouse_click_data_to_file(self):
+    def save_mouse_click_data_to_file(self, button):
         x, y = mouse.get_position()
 
         csv_writer = csv.writer(self.file_mouse, delimiter=",", lineterminator="\n")
-        csv_writer.writerow(
-            [self.timer.get_time_since_start(), x, y, self.timer.frame_counter]
-        )
+        TOTAL_TIME = self.timer.get_total_time()
+        FRAME_INDEX = self.timer.frame_counter
+
+        csv_writer.writerow([TOTAL_TIME, x, y, FRAME_INDEX, button])
+
+    def read_mouse_clicks_from_file(self):
+        with open(self.filename_mouse_click, "r") as mouse_click_file:
+            csv_reader = csv.reader(mouse_click_file, delimiter=",")
+            for index, row in enumerate(csv_reader, start=1):
+                TOTAL_TIME = row[0]
+                X = row[1]
+                Y = row[2]
+                FRAME_INDEX = row[3]
+                BUTTON = row[4]
+                CLICK_COUNTER = index
+
+                circle = CircleOverlay(
+                    TOTAL_TIME, X, Y, FRAME_INDEX, CLICK_COUNTER, BUTTON
+                )
+                self.clicks_to_stamp.append(circle)
 
     def enable_videowriter_with_output_filename_and_fps(self, filename, fps):
         codec = cv2.VideoWriter_fourcc(*"XVID")
@@ -48,7 +64,8 @@ class MouseRecorder:
         self.video_writer = cv2.VideoWriter(filename, codec, fps, resolution)
 
     def setup(self):
-        mouse.on_click(self.save_mouse_click_data_to_file)
+        mouse.on_click(self.save_mouse_click_data_to_file, args=("left",))
+        mouse.on_right_click(self.save_mouse_click_data_to_file, args=("right",))
         self.enable_videowriter_with_output_filename_and_fps(
             self.filename_recording, FPS
         )
@@ -74,7 +91,7 @@ class MouseRecorder:
                 or keyboard.is_pressed("backspace")
             ):
                 break
-        print(f"Recording duration: {self.timer.get_time_since_start()}s")
+        print(f"Recording duration: {self.timer.get_total_time()}s")
 
     def cleanup(self):
         self.file_mouse.close()
@@ -114,13 +131,6 @@ class MouseRecorder:
             self.video_writer.release()
             self.progress_bar.close()
 
-    def read_mouse_clicks_from_file(self):
-        with open(self.filename_mouse_click, "r") as mouse_click_file:
-            csv_reader = csv.reader(mouse_click_file, delimiter=",")
-            for index, row in enumerate(csv_reader, start=1):
-                circle = CircleOverlay(row[0], row[1], row[2], row[3], index)
-                self.clicks_to_stamp.append(circle)
-
     def should_draw_circle_this_frame(self, current_frame):
         if len(self.clicks_to_stamp) == 0:
             return False
@@ -139,6 +149,7 @@ class MouseRecorder:
     def draw_circles_on_frame(self, frame):
         overlay = frame.copy()
         for circle in self.circles_currently_drawn:
+            CIRCLE_COLOR = (0, 0, 255) if circle.button == "left" else (0, 100, 255)
             cv2.circle(overlay, (circle.x, circle.y), CIRCLE_RADIUS, CIRCLE_COLOR, -1)
             cv2.putText(
                 overlay,

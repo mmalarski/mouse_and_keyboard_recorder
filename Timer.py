@@ -7,7 +7,7 @@ class Timer:
         self.start_timestamp = time.time()
         self.last_frame_timestamp = self.start_timestamp
 
-    def get_time_since_start(self):
+    def get_total_time(self):
         return time.time() - self.start_timestamp
 
     def get_time_since_last_frame(self):
@@ -21,4 +21,4 @@ class Timer:
         self.start_timestamp = time.time()
 
     def get_mean_fps(self):
-        return self.frame_counter / self.get_time_since_start()
+        return self.frame_counter / self.get_total_time()

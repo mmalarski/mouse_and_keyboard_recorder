@@ -1,4 +1,5 @@
 # Mouse Recorder
+![](https://img.shields.io/badge/Python_3.10.6-yellowgreen)
 
 ## Overview
 Mouse Recorder is a tool designed to record and replay mouse clicks. This was designed to count the total number of clicks during one session and later filtering only the correct ones using the output recording.
