@@ -36,7 +36,12 @@ Mouse Recorder is a tool designed to record and replay mouse clicks. This was de
   python main.py
   ```
 2. Live preview will appear on screen, this can be minimised
-3. To end the recording click `backspace`, program does not have to be active
+3. When running, press `numpad 1`, `numpad 2`, `numpad 3` or `numpad 4` to make a timestamp when starting a task
+4. `numpad 0` makes a STOP timestamp after finishing the task
+5. `numpad 8` and `numpad 9` add CORRECT and WRONG timestamps respectively for tasks requiring an answer
+6. To end the recording click `backspace`  
+
+Program reads input in the background.
 
 ## Build
 1. Install pyinstaller
