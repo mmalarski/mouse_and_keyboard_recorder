@@ -66,6 +66,25 @@ class MouseRecorder:
     def setup(self):
         mouse.on_click(self.save_mouse_click_data_to_file, args=("left",))
         mouse.on_right_click(self.save_mouse_click_data_to_file, args=("right",))
+        keyboard.add_hotkey("num 0", self.save_mouse_click_data_to_file, args=("STOP",))
+        keyboard.add_hotkey(
+            "num 1", self.save_mouse_click_data_to_file, args=("TASK1",)
+        )
+        keyboard.add_hotkey(
+            "num 2", self.save_mouse_click_data_to_file, args=("TASK2",)
+        )
+        keyboard.add_hotkey(
+            "num 3", self.save_mouse_click_data_to_file, args=("TASK3",)
+        )
+        keyboard.add_hotkey(
+            "num 4", self.save_mouse_click_data_to_file, args=("TASK4",)
+        )
+        keyboard.add_hotkey(
+            "num 8", self.save_mouse_click_data_to_file, args=("CORRECT",)
+        )
+        keyboard.add_hotkey(
+            "num 9", self.save_mouse_click_data_to_file, args=("WRONG",)
+        )
         self.enable_videowriter_with_output_filename_and_fps(
             self.filename_recording, FPS
         )
@@ -97,6 +116,7 @@ class MouseRecorder:
         self.file_mouse.close()
         self.video_writer.release()
         mouse.unhook_all()
+        keyboard.unhook_all_hotkeys()
         cv2.destroyAllWindows()
         self.stamp_circles_on_raw_recording()
         if os.path.exists(self.filename_recording):
@@ -149,7 +169,11 @@ class MouseRecorder:
     def draw_circles_on_frame(self, frame):
         overlay = frame.copy()
         for circle in self.circles_currently_drawn:
-            CIRCLE_COLOR = (0, 0, 255) if circle.button == "left" else (0, 100, 255)
+            CIRCLE_COLOR = (0, 255, 0)
+            if circle.button == "left":
+                CIRCLE_COLOR = (0, 0, 255)
+            elif circle.button == "right":
+                CIRCLE_COLOR = (0, 100, 255)
             cv2.circle(overlay, (circle.x, circle.y), CIRCLE_RADIUS, CIRCLE_COLOR, -1)
             cv2.putText(
                 overlay,
