@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 import mouse
 import keyboard
-import csv
+import pandas as pd
 
 from CircleOverlay import CircleOverlay
 from Timer import Timer
@@ -31,30 +31,36 @@ class MouseRecorder:
         self.filename_recording = f"{date_time}\\recording.avi"
         self.filename_final_recording = f"{date_time}\\final_recording.avi"
 
-        self.file_mouse = open(self.filename_mouse_click, "w")
+        self.data_frame = {
+            "time": [],
+            "x": [],
+            "y": [],
+            "frame": [],
+            "button": [],
+        }
 
     def save_mouse_click_data_to_file(self, button):
         x, y = mouse.get_position()
 
-        csv_writer = csv.writer(self.file_mouse, delimiter=",", lineterminator="\n")
-        TOTAL_TIME = self.timer.get_total_time()
-        FRAME_INDEX = self.timer.frame_counter
-
-        csv_writer.writerow([TOTAL_TIME, x, y, FRAME_INDEX, button])
+        self.data_frame["time"].append(self.timer.get_total_time())
+        self.data_frame["x"].append(x)
+        self.data_frame["y"].append(y)
+        self.data_frame["frame_index"].append(self.timer.frame_counter)
+        self.data_frame["button"].append(button)
 
     def read_mouse_clicks_from_file(self):
         with open(self.filename_mouse_click, "r") as mouse_click_file:
-            csv_reader = csv.reader(mouse_click_file, delimiter=",")
-            for index, row in enumerate(csv_reader, start=1):
-                TOTAL_TIME = row[0]
-                X = row[1]
-                Y = row[2]
-                FRAME_INDEX = row[3]
-                BUTTON = row[4]
+            data = pd.read_csv(self.filename_mouse_click)
+            for index, row in data.iterrows():
                 CLICK_COUNTER = index
 
                 circle = CircleOverlay(
-                    TOTAL_TIME, X, Y, FRAME_INDEX, CLICK_COUNTER, BUTTON
+                    row["time"],
+                    row["x"],
+                    row["y"],
+                    row["frame_index"],
+                    CLICK_COUNTER,
+                    row["button"],
                 )
                 self.clicks_to_stamp.append(circle)
 
@@ -113,7 +119,9 @@ class MouseRecorder:
         print(f"Recording duration: {self.timer.get_total_time()}s")
 
     def cleanup(self):
-        self.file_mouse.close()
+
+        df = pd.DataFrame(self.data_frame)
+        df.to_csv(self.filename_mouse_click, header=True, index=False)
         self.video_writer.release()
         mouse.unhook_all()
         keyboard.unhook_all_hotkeys()
