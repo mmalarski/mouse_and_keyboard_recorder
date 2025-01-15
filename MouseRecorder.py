@@ -35,7 +35,7 @@ class MouseRecorder:
             "time": [],
             "x": [],
             "y": [],
-            "frame": [],
+            "frame_index": [],
             "button": [],
         }
 
@@ -127,8 +127,8 @@ class MouseRecorder:
         keyboard.unhook_all_hotkeys()
         cv2.destroyAllWindows()
         self.stamp_circles_on_raw_recording()
-        if os.path.exists(self.filename_recording):
-            os.remove(self.filename_recording)
+        # if os.path.exists(self.filename_recording):
+        #     os.remove(self.filename_recording)
         print("Done!")
 
     def stamp_circles_on_raw_recording(self):
