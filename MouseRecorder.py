@@ -45,7 +45,7 @@ class MouseRecorder:
         self.data_frame["time"].append(self.timer.get_total_time())
         self.data_frame["x"].append(x)
         self.data_frame["y"].append(y)
-        self.data_frame["frame_index"].append(self.timer.frame_counter)
+        self.data_frame["frame"].append(self.timer.frame_counter)
         self.data_frame["button"].append(button)
 
     def read_mouse_clicks_from_file(self, filename):
@@ -58,7 +58,7 @@ class MouseRecorder:
                     row["time"],
                     row["x"],
                     row["y"],
-                    row["frame_index"],
+                    row["frame"],
                     CLICK_COUNTER,
                     row["button"],
                 )
