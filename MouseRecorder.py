@@ -58,8 +58,7 @@ class MouseRecorder:
                     row["time"],
                     row["x"],
                     row["y"],
-                    # row["frame_index"],
-                    row["frame"],
+                    row["frame_index"],
                     CLICK_COUNTER,
                     row["button"],
                 )
