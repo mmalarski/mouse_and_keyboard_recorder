@@ -48,9 +48,9 @@ class MouseRecorder:
         self.data_frame["frame_index"].append(self.timer.frame_counter)
         self.data_frame["button"].append(button)
 
-    def read_mouse_clicks_from_file(self):
-        with open(self.filename_mouse_click, "r") as mouse_click_file:
-            data = pd.read_csv(self.filename_mouse_click)
+    def read_mouse_clicks_from_file(self, filename):
+        with open(filename, "r") as mouse_click_file:
+            data = pd.read_csv(filename)
             for index, row in data.iterrows():
                 CLICK_COUNTER = index
 
@@ -58,13 +58,17 @@ class MouseRecorder:
                     row["time"],
                     row["x"],
                     row["y"],
-                    row["frame_index"],
+                    # row["frame_index"],
+                    row["frame"],
                     CLICK_COUNTER,
                     row["button"],
                 )
                 self.clicks_to_stamp.append(circle)
 
     def enable_videowriter_with_output_filename_and_fps(self, filename, fps):
+        if not filename:
+            raise ValueError("Output filename cannot be empty")
+
         codec = cv2.VideoWriter_fourcc(*"XVID")
         resolution = (1920, 1080)
         self.video_writer = cv2.VideoWriter(filename, codec, fps, resolution)
@@ -126,19 +130,25 @@ class MouseRecorder:
         mouse.unhook_all()
         keyboard.unhook_all_hotkeys()
         cv2.destroyAllWindows()
-        self.stamp_circles_on_raw_recording()
+        self.stamp_circles_on_raw_recording(
+            self.filename_recording,
+            self.filename_final_recording,
+            self.filename_mouse_click,
+        )
         # if os.path.exists(self.filename_recording):
         #     os.remove(self.filename_recording)
         print("Done!")
 
-    def stamp_circles_on_raw_recording(self):
-        self.read_mouse_clicks_from_file()
+    def stamp_circles_on_raw_recording(
+        self, filename, output_filename, mouse_clicks_filename
+    ):
+        self.read_mouse_clicks_from_file(mouse_clicks_filename)
 
-        raw_video_capture = cv2.VideoCapture(self.filename_recording)
+        raw_video_capture = cv2.VideoCapture(filename)
         raw_video_total_frames = raw_video_capture.get(cv2.CAP_PROP_FRAME_COUNT)
         self.progress_bar = ProgressBar(raw_video_total_frames)
         self.enable_videowriter_with_output_filename_and_fps(
-            self.filename_final_recording, self.timer.get_mean_fps()
+            output_filename, raw_video_capture.get(cv2.CAP_PROP_FPS)
         )
 
         try:
@@ -163,10 +173,12 @@ class MouseRecorder:
         if len(self.clicks_to_stamp) == 0:
             return False
         else:
-            return self.clicks_to_stamp[0].frame_index == current_frame
+            return self.clicks_to_stamp[0].frame_index <= current_frame
 
     def move_circle_to_drawn_list(self):
         self.circles_currently_drawn.append(self.clicks_to_stamp[0])
+        if len(self.clicks_to_stamp) < 2:
+            print("No more circles to draw")
         self.check_and_remove_drawn_circles()
         self.clicks_to_stamp.pop(0)
 
